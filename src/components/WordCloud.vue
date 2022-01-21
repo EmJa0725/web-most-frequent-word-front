@@ -4,9 +4,11 @@
 
 <script>
 import * as d3 from 'd3'
-import * as cloud from 'd3-cloud'
+import * as cloudF from 'd3-cloud'
 import * as d3ScaleChromatic from 'd3-scale-chromatic'
 import resize from 'vue-resize-directive'
+const cloud = cloudF
+
 function throttle (method, context) {
   clearTimeout(method.tid)
   method.tid = setTimeout(function () {
@@ -114,7 +116,11 @@ export default {
   mounted () {
     this.getSize()
     this.chart = this.createChart()
-    this.renderChart()
+    try {
+      this.renderChart()
+    } catch (error) {
+      console.log("errorsss", error)
+    }
   },
   watch: {
     words: {
@@ -186,6 +192,7 @@ export default {
       const { spiral, wordPadding, fontSizeScale, font, words, nameKey, valueKey } = this
       const { width, height } = this.size
       const { a, b, c } = this.getRotation()
+      // const cloud = cloudTemp;
       const layout = cloud()
               .size([width, height])
               .words(words)

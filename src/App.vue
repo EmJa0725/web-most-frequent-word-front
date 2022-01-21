@@ -2,17 +2,21 @@
 import axios from "axios";
 import TopWords from './components/TopWords.vue'
 import IgnoredWords from './components/IgnoredWords.vue'
-import wordcloud from './components/WordCloud.vue'
+// import wordcloud from './components/WordCloud.vue'
+import WordCloud from 'wordcloud'
+import { Modal } from 'bootstrap'
+import {jsonTo2DArray } from './helpers/helpers'
 
 export default {
   name: "App",
   components: {
-    TopWords, IgnoredWords, wordcloud
+    TopWords, IgnoredWords, /* wordcloud */
   },
   data() {
     return {
       words: [],
       wordsCloud: [],
+      windowWidth: window.innerWidth,
       ignoredWords: [],
       loading: false,
       formData: {
@@ -21,6 +25,13 @@ export default {
         ignored: ""
       },
     };
+  },
+  mounted() {
+    this.$nextTick(() => {
+        window.addEventListener('resize', e => {
+          this.windowWidth = window.innerWidth
+        });
+    })
   },
   methods: {
     async onSubmit() {
@@ -47,8 +58,9 @@ export default {
       }
     },
 
-    addWord({keyCode}) {
-      if (keyCode === 32){        
+    addWord({code, keyCode, type}) {
+      if (code === 'Space' || keyCode === 32 || type === 'click'){     
+        console.log('space')   
         this.formData.ignored.trim() != "" && this.ignoredWords.push(this.formData.ignored.toLowerCase().trim());
         this.formData.ignored = "";
       }
@@ -63,13 +75,37 @@ export default {
     },
 
     showWordCloud(loadingCloud) {
-      this.wordsCloud = [];
-      setTimeout(() => {
-        this.wordsCloud = [...this.words];
-      }, 2000);
-      // loadingCloud = true;
-      // loadingCloud = false;
+      // this.wordsCloud = [];
+      // setTimeout(() => {
+      //   this.wordsCloud = [...this.words];
+      // }, 2000);
+      // // loadingCloud = true;
+      
+      const myModal = new Modal(this.$refs.wordCloudModal);
+      const list = jsonTo2DArray([...this.words]);
+      const options = {
+        list: list,
+        gridSize: window.innerWidth <= 650  ? 6: 12,
+        weightFactor: window.innerWidth <= 650 ? 1.5 : 2.3,
+        fontFamily: 'Hiragino Mincho Pro, serif',
+        color: 'random-dark',
+      }
+
+      // Calculate canvas size 
+      this.$refs.myCanvas.width = window.innerWidth <= 650 ? 300 : 600;
+      this.$refs.myCanvas.height =  window.innerWidth <= 650 ? 300 : 400;
+      
+      WordCloud(this.$refs.myCanvas,options);
+      myModal.show()      
     },
+
+    downloadWordCloud() {
+      const link = document.createElement('a');
+      link.download = 'wordcloud.png';
+      link.href = this.$refs.myCanvas.toDataURL();
+      link.click();
+      link.delete;
+    }
   },
 };
 </script>
@@ -94,7 +130,7 @@ export default {
                 />
               </div>
               <div class="row justify-content-center mb-3">
-                <div class="col-10 col-md-6">
+                <div class="col-9 col-sm-10 col-md-6">
                   <input
                     type="text"
                     class="form-control text-center"
@@ -104,10 +140,13 @@ export default {
                     placeholder="Ignore words or symbols"
                   />
                 </div>
-                <div class="col-1 d-flex align-items-center justify-content-center">
-                  <Popper content="Press space key to add word" :hover="true" placement="left" :interactive="false">
-                    <font-awesome-icon class="question-icon" :icon="['fas', 'question-circle']" @click="removeWord(index)" />
+                <div class="col-2 col-sm-1 d-flex align-items-center justify-content-center">
+                  <Popper v-if="windowWidth > 576" content="Press space key to add word" :hover="true" placement="left" :interactive="false">
+                    <font-awesome-icon class="question-icon" :icon="['fas', 'question-circle']"/>
                   </Popper>
+                  <button v-else type="button" class="btn btn-primary" @click="addWord">
+                    <font-awesome-icon class="plus-square" :icon="['fas', 'plus-square']"/>
+                  </button>
                 </div>
               </div>
               <div class="row justify-content-center">
@@ -144,13 +183,35 @@ export default {
       <div v-if="words.length" class="col-10 col-lg-6 mx-auto top-words mt-5 order-2 order-sm-1">
         <TopWords  :words="words" @showWordCloud="showWordCloud"/>
       </div>
-      <div v-if="wordsCloud.length" class="col-10 col-lg-6 mx-auto top-words mt-5 order-1 order-sm-2">
+      <!-- <div v-if="wordsCloud.length" class="col-10 col-lg-6 mx-auto top-words mt-5 order-1 order-sm-2">
         <wordcloud       
           :data="wordsCloud"
           nameKey="word"
           valueKey="count"
           :showTooltip="false"
         />
+      </div> -->
+    </div>
+  </div>
+  
+  <!-- Modal -->
+  <div class="modal fade" ref="wordCloudModal" id="wordCloudModal" tabindex="-1" aria-labelledby="wordcloudModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered mx-auto">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="wordcloudModalLabel">Wordcloud</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <canvas id="myCanvas" ref="myCanvas"/>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" @click="downloadWordCloud">
+            <font-awesome-icon class="me-1" :icon="['fas', 'save']"/>
+            Save as Image
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -195,6 +256,14 @@ export default {
   .question-icon {
     font-size: 30px;
     color: #dc3545;
+  }
+
+  .modal-dialog {
+    max-width: fit-content !important;
+  }
+
+  .modal-header, .modal-footer {
+    background-color: #d2e0edd2
   }
 
   /********** scrollbar ************/

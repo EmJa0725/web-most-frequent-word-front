@@ -44,6 +44,7 @@
     <div class="card-footer">
       <button type="button" class="btn btn-primary" @click="generateWordCloud">
           <span v-if="loadingCloud" class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+          <font-awesome-icon v-else class="cloud" :icon="['fas', 'cloud']"/>
           {{loadingCloud ? "Loading..." : "Generate wordcloud"}}
       </button>
     </div>
