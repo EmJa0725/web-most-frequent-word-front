@@ -85,15 +85,15 @@ export default {
       const list = jsonTo2DArray([...this.words]);
       const options = {
         list: list,
-        gridSize: window.innerWidth <= 650  ? 6: 12,
-        weightFactor: window.innerWidth <= 650 ? 1.5 : 2.3,
+        gridSize: window.innerWidth <= 650  ? 6.5: 13,
+        weightFactor: window.innerWidth <= 650 ? 1 : 2,
         fontFamily: 'Hiragino Mincho Pro, serif',
         color: 'random-dark',
       }
 
       // Calculate canvas size 
-      this.$refs.myCanvas.width = window.innerWidth <= 650 ? 300 : 600;
-      this.$refs.myCanvas.height =  window.innerWidth <= 650 ? 300 : 400;
+      this.$refs.myCanvas.width = window.innerWidth <= 650 ? 320 : 600;
+      this.$refs.myCanvas.height =  window.innerWidth <= 650 ? 300 : 450;
       
       WordCloud(this.$refs.myCanvas,options);
       myModal.show()      
